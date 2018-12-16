@@ -10,7 +10,8 @@
 #include "vcl.h"
 
 #include <maxminddb.h>
-
+char str[140];
+int pos=0;
 void
 freeit(void *data)
 {
@@ -111,11 +112,70 @@ vmod_query_postalcode(const struct vrt_ctx *ctx, struct vmod_priv *priv, const s
 	return vmod_query_common(ctx, priv, ip, postalcode_path);
 }
 
+VCL_STRING
+vmod_query_asn(const struct vrt_ctx *ctx, struct vmod_priv *priv, const struct suckaddr *ip)
+{
+        static const char *asn_path[] = { "autonomous_system_organization", NULL };
+        return vmod_query_common(ctx, priv, ip, asn_path);
+}
+
+
 // keep function vmod_query() for compatibility
 VCL_STRING
 vmod_query(const struct vrt_ctx *ctx, struct vmod_priv *priv, const struct suckaddr *ip)
 {
 	return vmod_query_country(ctx, priv, ip);
+}
+
+
+VCL_INT
+vmod_query_isIP6(const struct vrt_ctx *ctx, struct vmod_priv *priv, const char xff[])
+{
+        char ch=':';
+        int i=0;
+        for(i=0;i<40;i++){
+                if(xff[i]==ch){
+                        pos=i;
+                        return(1);
+                }
+        }
+
+        return (0);
+}
+
+VCL_STRING
+vmod_query_extractIP6(const struct vrt_ctx *ctx, struct vmod_priv *priv, const char xff[])
+{
+        int i, start=0, end=140;
+        char sep=',';
+        for(i=pos;i>0;i--)
+        {
+                if(xff[i]==sep){
+                        start=i;
+                        break;
+                }
+        }
+
+        if(start!=0){
+                start=start+2;
+        }
+
+
+        for(i=pos;i<140;i++)
+        {
+                if(xff[i]==sep){
+                        end=i;
+                        break;
+                }
+        }
+
+        int j=0;
+        for(i=start;i<end;i++)
+        {
+                str[j++]=xff[i];
+        }
+        str[j]='\0';
+        return (char *)str;
 }
 
 int
